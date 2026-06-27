@@ -46,14 +46,14 @@ function defaultConfig() {
   return {
     pin: '1234',
     missions: [
-      { id: uid(), title: 'Escovar os dentes', icon: '🪥', period: 'Manhã', type: 'photo', xp: 10, coins: 5 },
-      { id: uid(), title: 'Tomar banho', icon: '🚿', period: 'Manhã', type: 'toggle', xp: 10, coins: 5 },
-      { id: uid(), title: 'Arrumar a mochila', icon: '🎒', period: 'Manhã', type: 'photo', xp: 10, coins: 5 },
-      { id: uid(), title: 'Arrumar a cama', icon: '🛏️', period: 'Manhã', type: 'photo', xp: 10, coins: 5 },
-      { id: uid(), title: 'Remédio antes do almoço', icon: '💊', period: 'Tarde', type: 'medication', xp: 15, coins: 10, start: '11:30', end: '13:00' },
-      { id: uid(), title: 'Fazer a lição de casa', icon: '📚', period: 'Tarde', type: 'photo', xp: 20, coins: 10 },
-      { id: uid(), title: 'Remédio antes do jantar', icon: '💊', period: 'Noite', type: 'medication', xp: 15, coins: 10, start: '18:00', end: '19:30' },
-      { id: uid(), title: 'Escovar os dentes', icon: '🪥', period: 'Noite', type: 'photo', xp: 10, coins: 5 },
+      { id: uid(), title: 'Escovar os dentes', icon: '🪥', period: 'Manhã', type: 'photo', xp: 1, coins: 2 },
+      { id: uid(), title: 'Tomar banho', icon: '🚿', period: 'Manhã', type: 'toggle', xp: 1, coins: 2 },
+      { id: uid(), title: 'Arrumar a mochila', icon: '🎒', period: 'Manhã', type: 'photo', xp: 1, coins: 1 },
+      { id: uid(), title: 'Arrumar a cama', icon: '🛏️', period: 'Manhã', type: 'photo', xp: 1, coins: 2 },
+      { id: uid(), title: 'Remédio antes do almoço', icon: '💊', period: 'Tarde', type: 'medication', xp: 2, coins: 1, start: '11:30', end: '13:00' },
+      { id: uid(), title: 'Fazer a lição de casa', icon: '📚', period: 'Tarde', type: 'photo', xp: 2, coins: 1 },
+      { id: uid(), title: 'Remédio antes do jantar', icon: '💊', period: 'Noite', type: 'medication', xp: 2, coins: 1, start: '18:00', end: '19:30' },
+      { id: uid(), title: 'Escovar os dentes', icon: '🪥', period: 'Noite', type: 'photo', xp: 1, coins: 1 },
     ],
     shop: [
       { id: uid(), title: '30 min extra de jogo', icon: '🎮', cost: 50 },
