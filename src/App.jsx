@@ -65,27 +65,23 @@ function defaultConfig() {
 }
 function defaultAvatar() { return { level: 1, xp: 0, coins: 0 }; }
 
-/* ============================== storage ============================== */
+/* ============================== storage (window.storage API) ============================== */
 
 async function loadKey(key, fallback) {
   try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
+    const result = await window.storage.get(key);
+    return result ? JSON.parse(result.value) : fallback;
   } catch {
     return fallback;
   }
 }
+
 async function saveKey(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    await window.storage.set(key, JSON.stringify(value));
   } catch (e) {
     console.error('storage error', key, e);
   }
-}
-async function deleteKey(key) {
-  try {
-    localStorage.removeItem(key);
-  } catch {}
 }
 
 /* ============================== imagem ============================== */
@@ -117,6 +113,16 @@ function compressImage(file) {
 /* ============================== css ============================== */
 
 const APP_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Orbitron:wght@700;800;900&display=swap');
+
+@keyframes shakeIt {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+
 .quest-app{
   --void:#14101F; --void-soft:#1E1830; --void-card:#241D3A;
   --mana:#6C4DF6; --mana-soft:rgba(108,77,246,0.18);
@@ -140,6 +146,40 @@ const APP_CSS = `
 .quest-switch:focus-visible, .qbtn:focus-visible, .qcard:focus-visible, input:focus-visible, select:focus-visible{
   outline:2px solid var(--spectral); outline-offset:2px; }
 
+/* ---- login ---- */
+.login-panel{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:500px; gap:18px; text-align:center;
+}
+.login-panel h1{
+  font-family:'Orbitron', sans-serif; font-size:28px; font-weight:900;
+  background:linear-gradient(135deg, var(--mana), var(--spectral));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin:0 0 8px;
+}
+.login-subtitle{
+  font-size:13px; color:var(--mist); margin:-10px 0 10px;
+}
+.login-btn{
+  width:100%; max-width:280px; padding:15px 20px;
+  border:none; border-radius:16px; cursor:pointer;
+  font-family:'Baloo 2'; font-weight:800; font-size:16px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  transition:transform .15s, box-shadow .15s;
+}
+.login-btn:active{ transform:scale(0.97); }
+.login-btn.child{
+  background:linear-gradient(135deg, var(--mana), #9B5CF6);
+  color:white;
+  box-shadow:0 8px 24px rgba(108,77,246,0.4);
+}
+.login-btn.parent{
+  background:var(--void-card);
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--paper);
+}
+
+/* ---- avatar ---- */
 .avatar-card{ position:relative; background:linear-gradient(160deg, var(--void-card), var(--void-soft));
   border:1px solid rgba(255,255,255,0.06); border-radius:24px; padding:18px; display:flex; align-items:center; gap:16px; margin-bottom:18px; overflow:hidden; }
 .avatar-card.sm{ padding:12px; gap:12px; }
@@ -159,6 +199,7 @@ const APP_CSS = `
 .level-label{ font-family:'Orbitron'; font-weight:700; font-size:13px; color:var(--paper); }
 .xp-track{ width:100%; height:8px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; margin:6px 0; }
 .xp-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg, var(--rank-glow), var(--spectral)); transition:width .4s ease; }
+.xp-label{ font-size:11px; color:var(--mist); margin-top:-2px; margin-bottom:4px; }
 .coin-row{ display:flex; align-items:center; gap:6px; color:var(--ember); font-weight:700; font-size:13px; }
 
 .med-banner{ display:flex; align-items:center; gap:10px; background:var(--mana-soft); border:1px solid var(--mana);
@@ -208,8 +249,9 @@ const APP_CSS = `
 .pin-key{ background:var(--void-card); border:1px solid rgba(255,255,255,0.08); color:var(--paper); font-size:18px;
   font-weight:700; padding:14px 0; border-radius:14px; cursor:pointer; font-family:'Orbitron'; }
 
-.toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--void-card); border:1px solid var(--rank-glow);
-  color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:700; font-size:13px; z-index:60; box-shadow:0 6px 18px rgba(0,0,0,0.4); }
+.toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--void-card); border:1px solid var(--rank-glow, var(--mana));
+  color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:700; font-size:13px; z-index:60; box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  white-space:nowrap; }
 
 .levelup{ position:fixed; inset:0; background:rgba(10,8,18,0.85); z-index:70; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; gap:6px; padding:24px; }
 .levelup .big{ font-family:'Orbitron'; font-weight:900; font-size:42px; color:var(--ember); text-shadow:0 0 24px var(--ember); }
@@ -264,6 +306,7 @@ function AvatarCard({ avatar, small }) {
           <span className="level-label quest-display">NÍVEL {avatar.level}</span>
         </div>
         <div className="xp-track"><div className="xp-fill" style={{ width: pct + '%' }} /></div>
+        <div className="xp-label">{avatar.xp} / {need} XP</div>
         <div className="coin-row"><Coins size={14} /> {avatar.coins} pontos</div>
       </div>
     </div>
@@ -273,21 +316,29 @@ function AvatarCard({ avatar, small }) {
 function PinModal({ pin, onSuccess, onClose }) {
   const [value, setValue] = useState('');
   const [shake, setShake] = useState(false);
+
   const press = (d) => {
     const next = (value + d).slice(0, 4);
     setValue(next);
     if (next.length === 4) {
-      if (next === pin) { onSuccess(); }
-      else { setShake(true); setTimeout(() => { setShake(false); setValue(''); }, 400); }
+      if (next === pin) {
+        onSuccess();
+      } else {
+        setShake(true);
+        setTimeout(() => { setShake(false); setValue(''); }, 400);
+      }
     }
   };
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 320, borderRadius: 24, textAlign: 'center' }}>
-        <div className="sheet-head"><span className="sheet-title">Área dos responsáveis</span>
-          <button className="iconbtn" onClick={onClose}><X size={16} /></button></div>
+        <div className="sheet-head">
+          <span className="sheet-title">Área dos responsáveis</span>
+          <button className="iconbtn" onClick={onClose}><X size={16} /></button>
+        </div>
         <Lock size={28} style={{ margin: '8px auto', display: 'block', color: 'var(--mana)' }} />
-        <div className="pin-dots" style={{ animation: shake ? 'shakeIt .3s' : 'none' }}>
+        <div className="pin-dots" style={{ animation: shake ? 'shakeIt .4s' : 'none' }}>
           {[0, 1, 2, 3].map(i => <div key={i} className={`pin-dot${value.length > i ? ' filled' : ''}`} />)}
         </div>
         <div className="pin-pad">
@@ -307,12 +358,12 @@ function PinModal({ pin, onSuccess, onClose }) {
 
 export default function QuestApp() {
   const [ready, setReady] = useState(false);
-  const [config, setConfig] = useState(defaultConfig());
+  const [config, setConfig] = useState(null);
   const [avatar, setAvatar] = useState(defaultAvatar());
   const [completions, setCompletions] = useState({});
   const [redemptions, setRedemptions] = useState([]);
 
-  const [view, setView] = useState('child');
+  const [view, setView] = useState('login'); // 'login' | 'child' | 'parent'
   const [parentUnlocked, setParentUnlocked] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [tab, setTab] = useState('missoes');
@@ -327,6 +378,7 @@ export default function QuestApp() {
   const fileRef = useRef(null);
   const pendingMissionRef = useRef(null);
 
+  /* ---- load inicial ---- */
   useEffect(() => {
     (async () => {
       const [cfg, av, comp, red] = await Promise.all([
@@ -335,17 +387,22 @@ export default function QuestApp() {
         loadKey(`completions:${todayKey()}`, {}),
         loadKey('redemptions', []),
       ]);
-      setConfig(cfg); setAvatar(av); setCompletions(comp); setRedemptions(red);
+      setConfig(cfg);
+      setAvatar(av);
+      setCompletions(comp);
+      setRedemptions(red);
       setReady(true);
     })();
   }, []);
 
+  /* ---- toast auto-dismiss ---- */
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(t);
   }, [toast]);
 
+  /* ---- histórico ---- */
   useEffect(() => {
     if (view !== 'parent' || tab !== 'historico') return;
     loadKey(`completions:${historyDate}`, {}).then(setHistoryData);
@@ -354,7 +411,8 @@ export default function QuestApp() {
   const grantReward = useCallback((xpGain, coinGain) => {
     setAvatar(prev => {
       let { level, xp, coins } = prev;
-      xp += xpGain; coins += coinGain;
+      xp += xpGain;
+      coins += coinGain;
       let leveledUp = false;
       while (xp >= xpNeeded(level)) { xp -= xpNeeded(level); level += 1; leveledUp = true; }
       const next = { level, xp, coins };
@@ -365,9 +423,9 @@ export default function QuestApp() {
     });
   }, []);
 
-  const completeMission = useCallback((mission, photo) => {
+  const completeMission = useCallback((mission) => {
     setCompletions(prev => {
-      const next = { ...prev, [mission.id]: { done: true, time: timeNowLabel(), photo: photo || null } };
+      const next = { ...prev, [mission.id]: { done: true, time: timeNowLabel() } };
       saveKey(`completions:${todayKey()}`, next);
       return next;
     });
@@ -375,14 +433,15 @@ export default function QuestApp() {
   }, [grantReward]);
 
   const openCamera = (mission) => { pendingMissionRef.current = mission; fileRef.current?.click(); };
+
   const onFileChange = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     const mission = pendingMissionRef.current;
     if (!file || !mission) return;
     try {
-      const dataUrl = await compressImage(file);
-      completeMission(mission, dataUrl);
+      await compressImage(file);
+      completeMission(mission);
     } catch {
       setToast({ msg: 'Não consegui salvar a foto, tenta de novo' });
     }
@@ -391,16 +450,23 @@ export default function QuestApp() {
   const purchaseItem = (item) => {
     if (avatar.coins < item.cost) { setToast({ msg: 'Ainda não tem pontos suficientes' }); return; }
     const next = { ...avatar, coins: avatar.coins - item.cost };
-    setAvatar(next); saveKey('avatar', next);
-    const entry = { id: uid(), title: item.title, icon: item.icon, cost: item.cost, date: `${fmtDatePt(todayKey())} ${timeNowLabel()}`, fulfilled: false };
+    setAvatar(next);
+    saveKey('avatar', next);
+    const entry = {
+      id: uid(), title: item.title, icon: item.icon, cost: item.cost,
+      date: `${fmtDatePt(todayKey())} ${timeNowLabel()}`, fulfilled: false,
+    };
     const list = [entry, ...redemptions];
-    setRedemptions(list); saveKey('redemptions', list);
+    setRedemptions(list);
+    saveKey('redemptions', list);
+    setShopOpen(false);
     setToast({ msg: 'Combinado! Mostra pro responsável 🎉' });
   };
 
   const fulfillRedemption = (id) => {
     const list = redemptions.map(r => r.id === id ? { ...r, fulfilled: true } : r);
-    setRedemptions(list); saveKey('redemptions', list);
+    setRedemptions(list);
+    saveKey('redemptions', list);
   };
 
   const updateConfig = (next) => { setConfig(next); saveKey('config', next); };
@@ -412,63 +478,122 @@ export default function QuestApp() {
   const deleteShopItem = (id) => updateConfig({ ...config, shop: config.shop.filter(s => s.id !== id) });
 
   const resetAll = async () => {
-    const cfg = defaultConfig(); const av = defaultAvatar();
-    await Promise.all([saveKey('config', cfg), saveKey('avatar', av), saveKey(`completions:${todayKey()}`, {}), saveKey('redemptions', [])]);
+    const cfg = defaultConfig();
+    const av = defaultAvatar();
+    await Promise.all([
+      saveKey('config', cfg),
+      saveKey('avatar', av),
+      saveKey(`completions:${todayKey()}`, {}),
+      saveKey('redemptions', []),
+    ]);
     setConfig(cfg); setAvatar(av); setCompletions({}); setRedemptions([]);
-    setResetStep(0); setToast({ msg: 'Tudo zerado' });
+    setResetStep(0);
+    setToast({ msg: 'Tudo zerado' });
   };
 
   const medAlerts = useMemo(() => {
-    if (!config.missions) return [];
+    if (!config?.missions) return [];
     const m = nowMinutes();
-    return config.missions.filter(ms => ms.type === 'medication' && !completions[ms.id]?.done &&
-      m >= timeToMinutes(ms.start) - 10 && m <= timeToMinutes(ms.end));
-  }, [config.missions, completions]);
+    return config.missions.filter(ms =>
+      ms.type === 'medication' && !completions[ms.id]?.done &&
+      m >= timeToMinutes(ms.start) - 10 && m <= timeToMinutes(ms.end)
+    );
+  }, [config, completions]);
 
   const grouped = useMemo(() => {
     const g = {}; PERIOD_ORDER.forEach(p => g[p] = []);
-    (config.missions || []).forEach(m => { (g[m.period] || (g[m.period] = [])).push(m); });
+    (config?.missions || []).forEach(m => { (g[m.period] || (g[m.period] = [])).push(m); });
     return g;
-  }, [config.missions]);
+  }, [config]);
 
   const pendingRedemptions = redemptions.filter(r => !r.fulfilled);
   const fulfilledRedemptions = redemptions.filter(r => r.fulfilled);
 
+  /* ============================== renders ============================== */
+
   if (!ready) {
     return (
-      <div className="quest-app"><style>{APP_CSS}</style>
+      <div className="quest-app">
+        <style>{APP_CSS}</style>
         <div className="quest-shell"><div className="empty">Carregando missões…</div></div>
       </div>
     );
   }
 
+  /* ---- tela de login ---- */
+  if (view === 'login') {
+    return (
+      <div className="quest-app">
+        <style>{APP_CSS}</style>
+        <div className="quest-shell">
+          <div className="login-panel">
+            <h1 className="quest-display">Quest Kids</h1>
+            <p className="login-subtitle">Missões do dia, recompensas e diversão!</p>
+
+            <button className="login-btn child" onClick={() => setView('child')}>
+              🧒 Entrar como Criança
+            </button>
+
+            <button className="login-btn parent" onClick={() => {
+              if (parentUnlocked) setView('parent');
+              else setShowPin(true);
+            }}>
+              <Lock size={16} /> Entrar como Responsável
+            </button>
+          </div>
+        </div>
+
+        {showPin && (
+          <PinModal
+            pin={config.pin}
+            onClose={() => setShowPin(false)}
+            onSuccess={() => {
+              setParentUnlocked(true);
+              setShowPin(false);
+              setView('parent');
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  /* ---- views child / parent ---- */
   return (
     <div className="quest-app">
       <style>{APP_CSS}</style>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Orbitron:wght@700;800;900&display=swap');`}</style>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onFileChange} />
 
       <div className="quest-shell">
         <div className="quest-header">
-          <span className="quest-title quest-display">{view === 'child' ? 'Missões do Dia' : 'Painel da Família'}</span>
+          <span className="quest-title quest-display">
+            {view === 'child' ? 'Missões do Dia' : 'Painel da Família'}
+          </span>
           <button className="quest-switch" onClick={() => {
-            if (view === 'child') { if (parentUnlocked) setView('parent'); else setShowPin(true); }
-            else setView('child');
+            if (view === 'child') {
+              if (parentUnlocked) setView('parent');
+              else setShowPin(true);
+            } else {
+              setView('login');
+            }
           }}>
             {view === 'child' ? <Settings size={15} /> : <ArrowLeft size={15} />}
-            {view === 'child' ? 'Responsável' : 'Modo criança'}
+            {view === 'child' ? 'Responsável' : 'Voltar'}
           </button>
         </div>
 
         <AvatarCard avatar={avatar} small={view === 'parent'} />
 
+        {/* ===== VIEW CRIANÇA ===== */}
         {view === 'child' && (
           <>
             {medAlerts.map(m => (
               <div className="med-banner" key={m.id}>
                 <Clock size={20} color="var(--mana)" />
-                <div><b>{m.title}</b><span>Já tomou? Toca em "tirar foto" pra confirmar</span></div>
+                <div>
+                  <b>{m.title}</b>
+                  <span>Já tomou? Toca em "Foto" pra confirmar</span>
+                </div>
               </div>
             ))}
 
@@ -489,11 +614,9 @@ export default function QuestApp() {
                         </div>
                       </div>
                       {done ? (
-                        completions[mission.id].photo
-                          ? <img className="qthumb" src={completions[mission.id].photo} alt="" />
-                          : <span className="qbtn done"><CheckCircle2 size={16} />OK</span>
+                        <span className="qbtn done"><CheckCircle2 size={16} />OK</span>
                       ) : mission.type === 'toggle' ? (
-                        <button className="qbtn toggle" onClick={() => completeMission(mission, null)}><Check size={15} />Feito</button>
+                        <button className="qbtn toggle" onClick={() => completeMission(mission)}><Check size={15} />Feito</button>
                       ) : (
                         <button className="qbtn primary" onClick={() => openCamera(mission)}><Camera size={15} />Foto</button>
                       )}
@@ -503,19 +626,25 @@ export default function QuestApp() {
               </div>
             ) : null)}
 
-            <button className="fab" onClick={() => setShopOpen(true)}><ShoppingBag size={17} />Loja de recompensas</button>
+            <button className="fab" onClick={() => setShopOpen(true)}>
+              <ShoppingBag size={17} />Loja de recompensas
+            </button>
           </>
         )}
 
+        {/* ===== VIEW RESPONSÁVEL ===== */}
         {view === 'parent' && (
           <>
             <div className="tabs">
               <button className={`tab${tab === 'missoes' ? ' active' : ''}`} onClick={() => setTab('missoes')}><Star size={13} />Missões</button>
               <button className={`tab${tab === 'loja' ? ' active' : ''}`} onClick={() => setTab('loja')}><ShoppingBag size={13} />Loja</button>
               <button className={`tab${tab === 'historico' ? ' active' : ''}`} onClick={() => setTab('historico')}><CalendarDays size={13} />Histórico</button>
-              <button className={`tab${tab === 'resgates' ? ' active' : ''}`} onClick={() => setTab('resgates')}><Package size={13} />Resgates{pendingRedemptions.length > 0 ? ` (${pendingRedemptions.length})` : ''}</button>
+              <button className={`tab${tab === 'resgates' ? ' active' : ''}`} onClick={() => setTab('resgates')}>
+                <Package size={13} />Resgates{pendingRedemptions.length > 0 ? ` (${pendingRedemptions.length})` : ''}
+              </button>
             </div>
 
+            {/* ---- aba missões ---- */}
             {tab === 'missoes' && (
               <>
                 {config.missions.map(m => (
@@ -542,15 +671,15 @@ export default function QuestApp() {
                           <label>Confirmação</label>
                           <select value={m.type} onChange={e => updateMission(m.id, { type: e.target.value })}>
                             <option value="photo">Com foto</option>
-                            <option value="toggle">Só marcar (sem foto)</option>
-                            <option value="medication">Remédio (com horário)</option>
+                            <option value="toggle">Só marcar</option>
+                            <option value="medication">Remédio (horário)</option>
                           </select>
                         </div>
                       </div>
                       {m.type === 'medication' && (
                         <div className="field-row">
-                          <div className="field"><label>A partir de</label><input type="time" value={m.start} onChange={e => updateMission(m.id, { start: e.target.value })} /></div>
-                          <div className="field"><label>Até</label><input type="time" value={m.end} onChange={e => updateMission(m.id, { end: e.target.value })} /></div>
+                          <div className="field"><label>A partir de</label><input type="time" value={m.start || ''} onChange={e => updateMission(m.id, { start: e.target.value })} /></div>
+                          <div className="field"><label>Até</label><input type="time" value={m.end || ''} onChange={e => updateMission(m.id, { end: e.target.value })} /></div>
                         </div>
                       )}
                       <div className="field-row">
@@ -568,7 +697,7 @@ export default function QuestApp() {
                     ? <button className="qbtn danger" onClick={() => setResetStep(1)}><Trash2 size={14} />Apagar todos os dados</button>
                     : (
                       <div>
-                        <p style={{ fontSize: 12, color: 'var(--mist)' }}>Isso apaga missões, nível, pontos e histórico. Confirma?</p>
+                        <p style={{ fontSize: 12, color: 'var(--mist)', marginBottom: 8 }}>Isso apaga missões, nível, pontos e histórico. Confirma?</p>
                         <button className="qbtn danger" onClick={resetAll}>Sim, apagar tudo</button>{' '}
                         <button className="qbtn ghost" onClick={() => setResetStep(0)}>Cancelar</button>
                       </div>
@@ -577,6 +706,7 @@ export default function QuestApp() {
               </>
             )}
 
+            {/* ---- aba loja ---- */}
             {tab === 'loja' && (
               <>
                 {config.shop.map(s => (
@@ -597,6 +727,7 @@ export default function QuestApp() {
               </>
             )}
 
+            {/* ---- aba histórico ---- */}
             {tab === 'historico' && (
               <>
                 <div className="field" style={{ marginBottom: 14 }}>
@@ -612,13 +743,13 @@ export default function QuestApp() {
                         <div className="qtitle">{m.title}</div>
                         <div className="qmeta">{c?.done ? `Feito às ${c.time}` : 'Não feito'}</div>
                       </div>
-                      {c?.photo && <img className="qthumb" src={c.photo} alt="" />}
                     </div>
                   );
                 })}
               </>
             )}
 
+            {/* ---- aba resgates ---- */}
             {tab === 'resgates' && (
               <>
                 {pendingRedemptions.length === 0 && <div className="empty">Nenhum resgate pendente</div>}
@@ -642,27 +773,45 @@ export default function QuestApp() {
         )}
       </div>
 
+      {/* ===== LOJA MODAL ===== */}
       {shopOpen && (
         <div className="overlay" onClick={() => setShopOpen(false)}>
           <div className="sheet" onClick={e => e.stopPropagation()}>
-            <div className="sheet-head"><span className="sheet-title">🛒 Loja de recompensas</span>
-              <button className="iconbtn" onClick={() => setShopOpen(false)}><X size={16} /></button></div>
+            <div className="sheet-head">
+              <span className="sheet-title">🛒 Loja de recompensas</span>
+              <button className="iconbtn" onClick={() => setShopOpen(false)}><X size={16} /></button>
+            </div>
             <div className="coin-row" style={{ marginBottom: 12 }}><Coins size={15} />{avatar.coins} pontos disponíveis</div>
             {config.shop.map(item => (
               <div className="qcard" key={item.id}>
                 <div className="qicon">{item.icon}</div>
                 <div className="qbody"><div className="qtitle">{item.title}</div><div className="qmeta">{item.cost} pontos</div></div>
-                <button className="qbtn primary" disabled={avatar.coins < item.cost}
+                <button
+                  className="qbtn primary"
+                  disabled={avatar.coins < item.cost}
                   style={avatar.coins < item.cost ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                  onClick={() => purchaseItem(item)}>Trocar</button>
+                  onClick={() => purchaseItem(item)}
+                >Trocar</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {showPin && <PinModal pin={config.pin} onClose={() => setShowPin(false)} onSuccess={() => { setParentUnlocked(true); setShowPin(false); setView('parent'); }} />}
+      {/* ===== PIN MODAL ===== */}
+      {showPin && (
+        <PinModal
+          pin={config.pin}
+          onClose={() => setShowPin(false)}
+          onSuccess={() => {
+            setParentUnlocked(true);
+            setShowPin(false);
+            setView('parent');
+          }}
+        />
+      )}
 
+      {/* ===== LEVEL UP ===== */}
       {levelUpInfo && (
         <div className="levelup" onClick={() => setLevelUpInfo(null)}>
           <Sparkles size={36} color="var(--ember)" />
@@ -672,6 +821,7 @@ export default function QuestApp() {
         </div>
       )}
 
+      {/* ===== TOAST ===== */}
       {toast && <div className="toast">{toast.msg}</div>}
     </div>
   );
