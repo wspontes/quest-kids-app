@@ -11,11 +11,11 @@ const RANK_COLOR = { E: '#9A93B3', D: '#4DE8D8', C: '#6C4DF6', B: '#C770F0', A: 
 const PERIOD_ORDER = ['Manhã', 'Tarde', 'Noite'];
 
 function rankForLevel(level) {
-  if (level >= 250) return 'S';
-  if (level >= 200) return 'A';
-  if (level >= 150) return 'B';
-  if (level >= 100) return 'C';
-  if (level >= 50) return 'D';
+  if (level >= 120) return 'S';
+  if (level >= 80) return 'A';
+  if (level >= 50) return 'B';
+  if (level >= 25) return 'C';
+  if (level >= 10) return 'D';
   return 'E';
 }
 function xpNeeded(level) { return 60 + (level - 1) * 22; }
@@ -44,7 +44,7 @@ function fmtDatePt(key) {
 
 function defaultConfig() {
   return {
-    pin: '1234',
+    pin: '0711',
     missions: [
       { id: uid(), title: 'Escovar os dentes', icon: '🪥', period: 'Manhã', type: 'photo', xp: 1, coins: 2 },
       { id: uid(), title: 'Tomar banho', icon: '🚿', period: 'Manhã', type: 'toggle', xp: 1, coins: 2 },
